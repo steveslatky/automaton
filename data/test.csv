@@ -1,12 +1,7 @@
-//time, input_symbol, strength
+time, input_symbol, strength
 in, cs1+, cs2+, ucs+, e
-out, ucr+,ucr-2
+out, ucr+,ucr-
 1, cs1+, 5
 1, cs1+, 5
 2, cs2+, 2
 3, e, 0
-
-
-
-
-
