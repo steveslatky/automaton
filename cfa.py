@@ -5,9 +5,10 @@ import csv
 
 class transition:
 
-    def __init__(self, val=None, tmp=None):
+    def __init__(self, val, tmp=True):
         self.isTmp = tmp
         self.val = val
+        self.str = None
 
 
 
@@ -50,7 +51,28 @@ class cfa:
                 done = True
         return steps
 
+
+    def is_trans_defined(self, t):
+        for conn in self.delta[self.q_curr]:
+            if conn.val == t:
+                return True
+        return False
+
+    def get_trans_index(self, t):
+        for e,conn in enumerate(self.delta[self.q_curr]):
+            if conn.val == t:
+                return e
+        raise ValueError("Could not find transition index, Program failed")
+
+    def create_new_transition(self, I):
+        if self.is_trans_defined((self.q_curr, 'e')):
+            del (self.delta[self.q_curr][self.delta[self.q_curr].index(tt)])
+
+
+
+
     def run(self):
+        I = []
         # Abstraction of time for the use of simulation.
         time = 0
         steps = self.setup
@@ -61,19 +83,31 @@ class cfa:
 
             # STEP 2
             if (int(s_time) - time) > gamma:
-                tt = transition((self.q_curr, 'e'), True)
-                if tt in self.delta[self.q_curr]:
-                    self.delta[self.q_curr][self.delta[self.q_curr].index(tt)].isTmp = False
+                if self.is_trans_defined((self.q_curr, 'e')):
+                    # Get the 'e' Transition and marks it permanent
+                    self.delta[self.q_curr][self.get_trans_index((self.q_curr, 'e'))].isTmp = False
                 self.q_last = self.q_curr
-                self.q_curr = tt
+                self.q_curr = (self.q_curr, 'e')
 
             q_anchor = self.q_curr
             self.a_last = 'e'
             self.o_last = 'e'
 
             # TODO Unmark All symbols b and distributions p ^ delta _ q,a
+            # TODO Loop back to STEP 2
 
-            # input("Press enter to continue")
+            # Step 3
+            # Get list of strength Symbols. IN this case a list of transition objects
+            I_last = I
+            I = self.delta[self.q_curr]
+
+            # Step 4
+            I = sorted(I, key=lambda x : x.str, reverse=True)
+
+            # Step 5
+            # Create New Transition
+
+
 
 
 def main():
