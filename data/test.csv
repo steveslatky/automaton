@@ -1,4 +1,7 @@
 time, input_symbol, strength
+delta,0 , cs1+, 1, 50
+delta, 1 , cs2+, 2, 50
+delta, 2 , e , 0, 50
 in, cs1+, cs2+, ucs+, e
 out, ucr+,ucr-
 1, cs1+, 5

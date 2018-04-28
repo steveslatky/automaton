@@ -5,10 +5,10 @@ import csv
 
 class transition:
 
-    def __init__(self, val, tmp=True):
+    def __init__(self, val, str=None, tmp=True):
         self.isTmp = tmp
         self.val = val
-        self.str = None
+        self.str = str
 
 
 
@@ -18,7 +18,7 @@ class cfa:
         self.q = None
         self.in_alpha = None
         self.out_alpha = None
-        self.delta = None
+        self.delta = dict()
         self.lam = None
         self.initial_state = None
         self.rewards = None
@@ -44,6 +44,8 @@ class cfa:
         for row in reader:
             if done:
                 steps.append(row)
+            if row[0] == "delta":
+                self.parse_delta(row)
             if row[0] == "in":
                 self.in_alpha = row[1:]
             if row[0] == "out":
@@ -66,7 +68,17 @@ class cfa:
 
     def create_new_transition(self, I):
         if self.is_trans_defined((self.q_curr, 'e')):
-            del (self.delta[self.q_curr][self.delta[self.q_curr].index(tt)])
+            del (self.delta[self.q_curr][self.get_trans_index((self.q_curr,'e'))])
+
+
+    # In source file, to create a inital transition function the template looks as follows
+    # delta, state, input, output, strength
+    # This function parses that out and creates a transition object out of it.
+    def parse_delta(self, row):
+        try:
+            self.delta[int(row[1])].append(transition( (row[2],row[3]), row[4] ))
+        except:
+            self.delta[int(row[1])] = [(transition((row[2], row[3]), row[4]))]
 
 
 
@@ -105,7 +117,9 @@ class cfa:
             I = sorted(I, key=lambda x : x.str, reverse=True)
 
             # Step 5
-            # Create New Transition
+            # Create New Transition TODO <---
+
+
 
 
 
