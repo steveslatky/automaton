@@ -13,6 +13,7 @@ class transition:
         self.C = None
         self.P = None
         self.R = None
+        self.E = None
 
 
 class cfa:
@@ -84,7 +85,7 @@ class cfa:
                 except:
                     self.delta[self.q_curr] = [transition((self.q_curr, input[0]), input[1], self.state_count)]
 
-                self.delta[self.state_count] = transition((self.state_count, 'e'), 50, self.q_anchor, True)
+                self.delta[self.state_count] = [transition((self.state_count, 'e'), 50, self.q_anchor, True)]
 
                 # Loop through State_count implicit so you don't look at the just created state
                 index = len(self.delta[self.q_curr]) - 1
@@ -105,9 +106,6 @@ class cfa:
                     self.delta[self.q_curr][index].C = 0.1
                 # This needs to be at the end. You finally Crated a new state.
                 self.state_count += 1
-
-
-
 
 
 
@@ -166,6 +164,11 @@ class cfa:
             # Step 5
             # Create New Transition TODO <---
             self.create_new_transition(I)
+
+            self.o_last = self.o
+
+            
+
 
 
 def main():
