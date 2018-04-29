@@ -1,4 +1,5 @@
-time, input_symbol, strength
+#time, input_symbol, strength
+#for delta, state, input, output, str
 delta,0 , cs1+, 1, 50
 delta, 1 , cs2+, 2, 50
 delta, 2 , e , 0, 50

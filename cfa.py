@@ -5,11 +5,14 @@ import csv
 
 class transition:
 
-    def __init__(self, val, str=None, tmp=True):
+    def __init__(self, val, str=None, out=None, tmp=False):
         self.isTmp = tmp
         self.val = val
         self.str = str
-
+        self.output = out
+        self.C = None
+        self.P = None
+        self.R = None
 
 
 class cfa:
@@ -21,7 +24,7 @@ class cfa:
         self.delta = dict()
         self.lam = None
         self.initial_state = None
-        self.rewards = None
+        self.reward = []
         self.punish = []
         self.confidence = None
         self.expect = None
@@ -31,6 +34,9 @@ class cfa:
         self.a_last = 'e'
         self.o = 'e'
         self.o_last = 'e'
+        self.q_anchor = 0
+
+        self.state_count = 0
 
     # Get data
     # Set alphabet
@@ -46,13 +52,15 @@ class cfa:
                 steps.append(row)
             if row[0] == "delta":
                 self.parse_delta(row)
+                # Make sure always count after you enter the state into Delta so th b
+                # So the count will stay true.
+                self.state_count += 1
             if row[0] == "in":
                 self.in_alpha = row[1:]
             if row[0] == "out":
                 self.out_alpha = row[1:]
                 done = True
         return steps
-
 
     def is_trans_defined(self, t):
         for conn in self.delta[self.q_curr]:
@@ -61,14 +69,49 @@ class cfa:
         return False
 
     def get_trans_index(self, t):
-        for e,conn in enumerate(self.delta[self.q_curr]):
+        for e, conn in enumerate(self.delta[self.q_curr]):
             if conn.val == t:
                 return e
         raise ValueError("Could not find transition index, Program failed")
 
     def create_new_transition(self, I):
         if self.is_trans_defined((self.q_curr, 'e')):
-            del (self.delta[self.q_curr][self.get_trans_index((self.q_curr,'e'))])
+            del (self.delta[self.q_curr][self.get_trans_index((self.q_curr, 'e'))])
+        for input in I:
+            if not self.is_trans_defined((self.q_curr, input[0])):
+                try:
+                    self.delta[self.q_curr].append(transition((self.q_curr, input[0]), input[1], self.state_count))
+                except:
+                    self.delta[self.q_curr] = [transition((self.q_curr, input[0]), input[1], self.state_count)]
+
+                self.delta[self.state_count] = transition((self.state_count, 'e'), 50, self.q_anchor, True)
+
+                # Loop through State_count implicit so you don't look at the just created state
+                index = len(self.delta[self.q_curr]) - 1
+                found = False
+                for n in range(self.state_count):
+                    for state in self.delta[n]:
+                        if state.val[1] == input[0]:
+                            self.delta[self.q_curr][index].C = state.C
+                            #self.delta[self.q_curr][index].P = state.P
+                            if state in self.punish:
+                                self.punish.append(self.delta[self.q_curr][index])
+                            elif state in self.reward:
+                                self.reward.append(self.delta[self.q_curr][index])
+                            found = True
+                            break
+                # Final Else in create new Trans
+                if not found:
+                    self.delta[self.q_curr][index].C = 0.1
+                # This needs to be at the end. You finally Crated a new state.
+                self.state_count += 1
+
+
+
+
+
+
+
 
 
     # In source file, to create a inital transition function the template looks as follows
@@ -76,12 +119,9 @@ class cfa:
     # This function parses that out and creates a transition object out of it.
     def parse_delta(self, row):
         try:
-            self.delta[int(row[1])].append(transition( (row[2],row[3]), row[4] ))
+            self.delta[int(row[1])].append(transition((row[1], row[2]), row[4], row[3]))
         except:
-            self.delta[int(row[1])] = [(transition((row[2], row[3]), row[4]))]
-
-
-
+            self.delta[int(row[1])] = [transition((row[1], row[2]), row[4], row[3])]
 
     def run(self):
         I = []
@@ -98,7 +138,7 @@ class cfa:
                 if self.is_trans_defined((self.q_curr, 'e')):
                     # Get the 'e' Transition and marks it permanent
                     self.delta[self.q_curr][self.get_trans_index((self.q_curr, 'e'))].isTmp = False
-                self.q_last = self.q_curr
+                self.q_anchor = self.q_curr
                 self.q_curr = (self.q_curr, 'e')
 
             q_anchor = self.q_curr
@@ -108,20 +148,24 @@ class cfa:
             # TODO Unmark All symbols b and distributions p ^ delta _ q,a
             # TODO Loop back to STEP 2
 
+            t = steps[0][0]
+            I = []
+            I_last = I
             # Step 3
             # Get list of strength Symbols. IN this case a list of transition objects
-            I_last = I
-            I = self.delta[self.q_curr]
+            for e, s in enumerate(steps):
+                if s[0] is t:
+                    I.append((s[1], s[2]))
+                else:
+                    del steps[0:e]
+                    break
 
             # Step 4
-            I = sorted(I, key=lambda x : x.str, reverse=True)
+            I = sorted(I, key=lambda x: x[1], reverse=True)
 
             # Step 5
             # Create New Transition TODO <---
-
-
-
-
+            self.create_new_transition(I)
 
 
 def main():
