@@ -109,9 +109,6 @@ class cfa:
 
 
 
-
-
-
     # In source file, to create a inital transition function the template looks as follows
     # delta, state, input, output, strength
     # This function parses that out and creates a transition object out of it.
@@ -167,7 +164,7 @@ class cfa:
 
             self.o_last = self.o
 
-            
+
 
 
 
