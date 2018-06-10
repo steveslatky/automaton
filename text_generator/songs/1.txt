@@ -1,3 +1,7 @@
+==========================================================
+Version 1, Super Simple word_picker. Just uses the words
+seen the most after the current word.
+==========================================================
 ass bustin' out the genie out the genie
 worse", huh
 take us past the genie out the genie
