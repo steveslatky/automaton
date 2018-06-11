@@ -28,7 +28,7 @@ class cfa:
         self.reward = []
         self.punish = []
         self.confidence = None
-        self.expect = None
+        self.expect = dict()
 
         self.q_curr = 0
         self.q_last = 0
@@ -118,6 +118,20 @@ class cfa:
         except:
             self.delta[int(row[1])] = [transition((row[1], row[2]), row[4], row[3])]
 
+    def update_expectations(self, s_d_action):
+        # TODO Possibly make into dict to be faster
+        if ((self.q_last, self.a_last), (self.q_curr, s_d_action)) in self.expect:
+            pass
+            # delta_e =
+
+            ###
+            ###
+            ### I just need to stop here for the moment. My Brain is done for today.
+            ###
+            ###
+
+
+
     def run(self):
         I = []
         # Abstraction of time for the use of simulation.
@@ -129,7 +143,7 @@ class cfa:
             s_time = s[0]
 
             # STEP 2
-            if (int(s_time) - time) > gamma:
+            while (int(s_time) - time) > gamma:
                 if self.is_trans_defined((self.q_curr, 'e')):
                     # Get the 'e' Transition and marks it permanent
                     self.delta[self.q_curr][self.get_trans_index((self.q_curr, 'e'))].isTmp = False
@@ -143,6 +157,7 @@ class cfa:
             # TODO Unmark All symbols b and distributions p ^ delta _ q,a
             # TODO Loop back to STEP 2
 
+            # Time of step
             t = steps[0][0]
             I = []
             I_last = I
@@ -157,13 +172,25 @@ class cfa:
 
             # Step 4
             I = sorted(I, key=lambda x: x[1], reverse=True)
+            s_d = I[0]
 
             # Step 5
             # Create New Transition TODO <---
             self.create_new_transition(I)
 
+            # Step 6
             self.o_last = self.o
 
+            # Step 7
+            # Can use first trans in list current state since I was sorted going
+            # in to create function
+            self.o = self.delta[self.q_curr][0].C = 1 + self.delta[self.q_curr][0].C
+
+            # Step 8
+            # Todo add to punishment with self.o
+
+            # Step 9
+            self.update_expectations(s_d[0])
 
 
 

@@ -1,0 +1,4 @@
+==========================================================
+Version 2, Updating word_picker to use some probabilty
+instead of just picking the word with the most use. 
+==========================================================
