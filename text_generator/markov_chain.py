@@ -46,8 +46,8 @@ class structure_chain:
     def _normolize(self, num_songs):
         for item in self.song_struct:
             if self.song_struct[item].times_seen != 0:
-                self.song_struct[item].times_seen = round(self.song_struct[item].times_seen / num_songs)
                 self.song_struct[item].length = round(self.song_struct[item].length / self.song_struct[item].times_seen)
+                self.song_struct[item].times_seen = round(self.song_struct[item].times_seen / num_songs)
 
 
 
@@ -82,7 +82,11 @@ class song_chain:
                 else:
                     self.alpha[cur_word][next_word] = words_def()
 
-    def read_source(self, file):
+    def read_source(self, source):
+        for i in range(1, len(listdir(source)) + 1):
+            self._parse_source(source + str(i) + ".txt")
+
+    def _parse_source(self, file):
         with open(file, "r") as f:
             for line in f:
                 # Ignore the Chours and Verse tags
@@ -107,7 +111,7 @@ class song_chain:
                     try:
                         next_words_list = self.alpha[word]
                         word = pick_word(next_words_list)
-                    except KeyError:  # TODO Fix what happens if you don't find connecting word
+                    except KeyError:
                         break
                 line.append(word)
             song.append(line)
@@ -172,12 +176,9 @@ def pick_word(next_word_list):
 def main():
     source = "./sources/kanye/"
     generator = song_chain()
-    for i in range(1, len(listdir(source)) + 1):
-        generator.read_source(source + str(i) + ".txt")
-    generator.create_song()
-    struct_gen = structure_chain()
-    struct_gen.read_source(source)
 
+    generator.read_source()
+    generator.create_song()
 
 
 if __name__ == '__main__':
