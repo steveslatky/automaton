@@ -6,23 +6,67 @@
 # on the source.
 from os import listdir
 from random import randint
-import hyphen
+# import hyphen
+# TODO Finish improting songs with Chorus/Verse
+class structure_def:
+
+    def __init__(self, length=0, times_seen=1):
+        self.length = length
+        self.times_seen = times_seen
+
+class structure_chain:
+
+    def __init__(self):
+        self.song_struct = dict()
+
+
+    # Input: Source directory
+    def read_source(self,source):
+        num_songs = len(listdir(source)) + 1
+        for i in range(1, num_songs):
+            self._parse_sources(source + str(i) + ".txt")
+        self._normolize(num_songs)
+
+    def _parse_sources(self, source):
+        last_struct_type = None
+        with open(source, 'r') as f:
+            for line in f:
+                if line[0] is "[":
+                    last_struct_type = line[1].lower()
+                    if line[1] not in self.song_struct:
+                        # Use first letter to determine Chorus or verse.
+                        self.song_struct[line[1].lower()] = structure_def()
+                    else:
+                        self.song_struct[line[1].lower()].times_seen += 1
+                else:
+                    if last_struct_type is not None:
+                        self.song_struct[last_struct_type].length += 1
+
+    # Gets the Average per song of length of type
+    def _normolize(self, num_songs):
+        for item in self.song_struct:
+            if self.song_struct[item].times_seen != 0:
+                self.song_struct[item].times_seen = round(self.song_struct[item].times_seen / num_songs)
+                self.song_struct[item].length = round(self.song_struct[item].length / self.song_struct[item].times_seen)
+
+
 
 class words_def:
 
-    # TODO Possible improvement, track type of word
+    # TODO Possible improvement, track type of word (Adj, Noun, Adv, etc)
     def __init__(self, num=1):
         self.num_seen = num
 
 
-class chain:
+class song_chain:
 
     def __init__(self):
         self.alpha = dict()  # Alphabet (or known as dictionary)
-        self.h_en = hyphen.Hyphenator('en_US')
+        # self.h_en = hyphen.Hyphenator('en_US')
 
+    # TODO fix up so that the new sources won't cause problems with [Chrous]
     def add_to_alpha(self, cur_word, next_word):
-        print(self.h_en.syllables(cur_word))
+        # print(self.h_en.syllables(cur_word))
         if next_word is not None:
             # Sanitize words
             cur_word = cur_word.strip(",").strip("\"")
@@ -41,12 +85,14 @@ class chain:
     def read_source(self, file):
         with open(file, "r") as f:
             for line in f:
-                word_list = line.strip("\n").strip(".").strip("!").strip("?").strip(",").split(" ")
-                for e, word in enumerate(word_list):
-                    try:
-                        self.add_to_alpha(word.lower(), word_list[e + 1].lower())
-                    except IndexError:
-                        pass
+                # Ignore the Chours and Verse tags
+                if line[0] is not "[":
+                    word_list = line.strip("\n").strip(".").strip("!").strip("?").strip(",").split(" ")
+                    for e, word in enumerate(word_list):
+                        try:
+                            self.add_to_alpha(word.lower(), word_list[e + 1].lower())
+                        except IndexError:
+                            pass
 
     def create_song(self, line_len=8, song_len=60):
         song = []
@@ -81,7 +127,7 @@ def write_song(song):
     song_num = len(listdir("./songs")) + 1
     with open("./songs/" + str(song_num) + ".txt", 'w') as f:
         description = "==========================================================\n" \
-                      "Version 5, Gonna try and get the count syllables\n" \
+                      "Version 5: Putting together a structure to the song \n" \
                       "\n" \
                       "==========================================================\n"
         f.write(description)
@@ -125,10 +171,13 @@ def pick_word(next_word_list):
 
 def main():
     source = "./sources/kanye/"
-    generator = chain()
+    generator = song_chain()
     for i in range(1, len(listdir(source)) + 1):
         generator.read_source(source + str(i) + ".txt")
     generator.create_song()
+    struct_gen = structure_chain()
+    struct_gen.read_source(source)
+
 
 
 if __name__ == '__main__':
