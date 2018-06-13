@@ -5,27 +5,36 @@
 # It will take in a text source and output works based
 # on the source.
 from os import listdir
-from random import randint
+from random import randint, random
+
+
 # import hyphen
 # TODO Finish improting songs with Chorus/Verse
+
 class structure_def:
 
     def __init__(self, length=0, times_seen=1):
         self.length = length
         self.times_seen = times_seen
 
+class words_def:
+
+    # TODO Possible improvement, track type of word (Adj, Noun, Adv, etc)
+    def __init__(self, num=1):
+        self.num_seen = num
+
+
 class structure_chain:
 
     def __init__(self):
         self.song_struct = dict()
 
-
     # Input: Source directory
-    def read_source(self,source):
+    def read_source(self, source):
         num_songs = len(listdir(source)) + 1
         for i in range(1, num_songs):
             self._parse_sources(source + str(i) + ".txt")
-        self._normolize(num_songs)
+        self._normalize(num_songs)
 
     def _parse_sources(self, source):
         last_struct_type = None
@@ -33,7 +42,7 @@ class structure_chain:
             for line in f:
                 if line[0] is "[":
                     last_struct_type = line[1].lower()
-                    if line[1] not in self.song_struct:
+                    if line[1].lower() not in self.song_struct:
                         # Use first letter to determine Chorus or verse.
                         self.song_struct[line[1].lower()] = structure_def()
                     else:
@@ -43,28 +52,19 @@ class structure_chain:
                         self.song_struct[last_struct_type].length += 1
 
     # Gets the Average per song of length of type
-    def _normolize(self, num_songs):
+    def _normalize(self, num_songs):
         for item in self.song_struct:
-            if self.song_struct[item].times_seen != 0:
-                self.song_struct[item].length = round(self.song_struct[item].length / self.song_struct[item].times_seen)
-                self.song_struct[item].times_seen = round(self.song_struct[item].times_seen / num_songs)
-
-
-
-class words_def:
-
-    # TODO Possible improvement, track type of word (Adj, Noun, Adv, etc)
-    def __init__(self, num=1):
-        self.num_seen = num
+            self.song_struct[item].length = round(self.song_struct[item].length / self.song_struct[item].times_seen)
+            self.song_struct[item].times_seen = round(self.song_struct[item].times_seen / num_songs)
 
 
 class song_chain:
 
     def __init__(self):
+        self.struct = None
         self.alpha = dict()  # Alphabet (or known as dictionary)
         # self.h_en = hyphen.Hyphenator('en_US')
 
-    # TODO fix up so that the new sources won't cause problems with [Chrous]
     def add_to_alpha(self, cur_word, next_word):
         # print(self.h_en.syllables(cur_word))
         if next_word is not None:
@@ -83,6 +83,8 @@ class song_chain:
                     self.alpha[cur_word][next_word] = words_def()
 
     def read_source(self, source):
+        self.struct = structure_chain()
+        self.struct.read_source(source)
         for i in range(1, len(listdir(source)) + 1):
             self._parse_source(source + str(i) + ".txt")
 
@@ -98,8 +100,9 @@ class song_chain:
                         except IndexError:
                             pass
 
-    def create_song(self, line_len=8, song_len=60):
+    def create_chorus(self, line_len, song_len):
         song = []
+        song.append(["[Chorus]"])
         for line_count in range(song_len):
             word = None
             line = []
@@ -115,11 +118,65 @@ class song_chain:
                         break
                 line.append(word)
             song.append(line)
-            # 1/10 times it will duplicate a line to make a chorus
-            while randint(0, 10) is 10:
+
+            while randint(0, 10) >= 9:
                 song.append(line)
 
-        # write_song(song)
+        return list(song)
+
+
+    def create_song(self, line_len=8, song_len=60):
+        song = []
+        struct_count = 0
+
+        chorus = self.create_chorus(line_len, self.struct.song_struct["c"].length)
+
+        isChrous = self.chorus_dice_roll()
+        if isChrous:
+            struct_count = self.struct.song_struct["v"].length
+            for line in chorus:
+                song.append(line)
+            song.append(["[Verse]"])
+        else:
+            song.append(["[Verse]"])
+
+        for line_count in range(song_len):
+
+            # Alternate between chorus and Verse
+            if struct_count <= line_count:
+                struct_count += self.struct.song_struct["v"].length
+                for line in chorus:
+                    song.append(line)
+                song.append(["[Verse]"])
+
+            word = None
+            line = []
+            for words_in_line in range(line_len):
+                # Pick random word if start of line
+                if word is None:
+                    word = list(self.alpha.keys())[randint(0, len(self.alpha) - 1)]
+                else:
+                    try:
+                        next_words_list = self.alpha[word]
+                        word = pick_word(next_words_list)
+                    except KeyError:
+                        break
+                line.append(word)
+            song.append(line)
+            # 1/10 times it will duplicate a line to make a chorus
+            # while randint(0, 10) is 10:
+            #     song.append(line)
+        write_song(song)
+
+
+    # TODO Fix for more struct entries. Only works for verse chrous stuct at the moment
+    def chorus_dice_roll(self):
+        total = sum(list(self.struct.song_struct[key].times_seen for key in self.struct.song_struct))
+        combo_list = list((self.struct.song_struct[key].times_seen/total, key) for key in self.struct.song_struct)
+        dice = random()
+        if dice <= combo_list[0][0]: return False
+        else: return True
+
 
 
 # TODO Find avg line length
@@ -177,7 +234,9 @@ def main():
     source = "./sources/kanye/"
     generator = song_chain()
 
-    generator.read_source()
+
+
+    generator.read_source(source)
     generator.create_song()
 
 
